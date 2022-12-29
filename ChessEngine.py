@@ -33,6 +33,8 @@ class GameState():
         self.moveLog = []
         self.whiteKingLocation = (7, 4)
         self.blackKingLocation = (0, 4)
+        self.checkMate = False
+        self.staleMate = False
 
     '''
     Toma un movimiento como parametro y lo ejecuta, no sirve para algunos movimientos
@@ -61,6 +63,8 @@ class GameState():
                 self.whiteKingLocation = (move.startRow, move.startCol)
             if move.pieceMoved == 'bK':
                 self.blackKingLocation = (move.startRow, move.startCol)
+            self.checkMate = False
+            self.staleMate = False
 
         else:
             print('Error: No move in the move log!')
@@ -94,12 +98,8 @@ class GameState():
                     # if piece == 'Q':
                     #     self.getQueenMoves(row, col, moves)
 
-        print('-' * 20)
-        for i in moves:
-            print(i.getChessNotation())
-        print('-' * 20)
-
         return moves
+
 
     # Considerando jaques, es decir toma los movimientos validos y los filtra
     # segun si terminan en un jaque para la persona que esta por mover
@@ -110,16 +110,55 @@ class GameState():
         # 1 generate all possible moves
         moves = self.getAllPossibleMoves()
         # 2 for each move, make the move
-
+        for i in range(len(moves)-1, -1, -1): # when removing elements from a list, doit backwards
+            self.makeMove(moves[i])
         # 3 generate all opponents moves
         # 4 for each of your opponents moves, see if they attack your king
-        # 5 if they do attack your king, is not a valid move
+            self.whiteToMove = not self.whiteToMove # because when a move is made, the turns switch
+            if self.inCheck():
+                moves.remove(moves[i])# 5 if they do attack your king, is not a valid move
+            self.whiteToMove = not self.whiteToMove
+            self.undoMove()
 
+        if len(moves) == 0:
+            if self.inCheck():
+                self.checkMate = True
+            else:
+                self.staleMate = True
 
-
-
+        print('-' * 20)
+        for i in moves:
+            print(i.getChessNotation())
+        if self.staleMate:
+            print('Stalemate')
+        if self.checkMate:
+            print('Checkmate')
+        print('-' * 20)
 
         return moves
+
+
+    '''
+    Determine if the current player is in check
+    '''
+    def inCheck(self):
+        if self.whiteToMove:
+            return self.squareUnderAttack(self.whiteKingLocation[0], self.whiteKingLocation[1])
+        else:
+            return self.squareUnderAttack(self.blackKingLocation[0], self.blackKingLocation[1])
+
+
+    '''
+    Determine if the opposite color can attack the square row, col
+    '''
+    def squareUnderAttack(self, row, col):
+        self.whiteToMove = not self.whiteToMove # switch to opponents turn to move, to see their moves
+        oppMoves = self.getAllPossibleMoves()
+        self.whiteToMove = not self.whiteToMove # switch back
+        for move in oppMoves:
+            if move.endRow == row and move.endCol == col:
+                return True
+        return False
 
 
 

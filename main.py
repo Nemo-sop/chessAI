@@ -1,16 +1,14 @@
 """
 Este es el archivo principal, es el encargado de manejar los input del usuario y mostrar el estado actual del juego
 """
-import random
-import time
 
 import pygame as p
 import ChessEngine
 from suplement import *
 
 p.init()
-width = 800 #712
-height = 600 #512
+width = 800  # 712
+height = 600  # 512
 dimension = 8  # por el 8x8 del tablero
 sq_size = height // dimension
 max_fps = 15  # para la animacion
@@ -128,26 +126,27 @@ def main():
                     p.draw.rect(screen, p.Color("gray"), [sq_size * 8 + 20, 100, 160, sq_size // 2])
                     text = p.font.SysFont('Corbel', 24).render('Color', True, "black")
                     screen.blit(text, ((sq_size * 8) + 25, 105))
-                    if color[1]+1 >= color[2]:
+                    if color[1] + 1 >= color[2]:
                         ind = 0
                     else:
-                        ind = color[1]+1
+                        ind = color[1] + 1
                     color = [colors[ind], ind, len(colors)]
                 else:
                     setColorBoard(screen)
+
 
 
                 # Funcion para ejecutar un movimiento
                 if len(playerClicks) == 2:  # es decir el usuario clickeo 2 veces
                     move = ChessEngine.Move(playerClicks[0], playerClicks[1], gameState.board)
 
-
                     if move in validMoves:
                         gameState.makeMove(move)
 
-                        # Last valid move functionality
-                        p.draw.rect(screen, p.Color("gray"), [sq_size * 8 + 20, 550, 165, sq_size // 2])
-                        text = p.font.SysFont('Corbel', 24).render('Last Move: ' + str(move.getChessNotation()), True, "black")
+                        # Show last valid move made functionality
+                        p.draw.rect(screen, p.Color("white"), [sq_size * 8 + 20, 550, 165, sq_size // 2])
+                        text = p.font.SysFont('Corbel', 24).render('Last Move: ' + str(move.getChessNotation()), True,
+                                                                   "black")
                         screen.blit(text, ((sq_size * 8) + 25, 555))
 
                         moveMade = True
@@ -155,7 +154,7 @@ def main():
                     else:
                         print('invalid move')
 
-                    print(move.getChessNotation())
+                    print('move made: ' + move.getChessNotation())
 
                     # resetear los clicks
                     sqSelected = ()
@@ -175,11 +174,9 @@ def main():
             validMoves = gameState.getValidMoves()
             moveMade = False
 
-
-
         clock.tick(max_fps)
         p.display.flip()
-        drawGameState(screen, gameState, color[0])
+        drawGameState(screen, gameState, color[0], playerClicks, validMoves)
 
 
 """
@@ -188,10 +185,22 @@ responsable de los graficos en un estado de juego
 """
 
 
-def drawGameState(screen, gameState, color):
+def drawGameState(screen, gameState, color, playerClicks, validMoves):
     drawBoard(screen, color)  # dibuja los cuadrados en el tablero
     # [UPGRADE] aca se pueden dibujar movimientos sugeridos, etc
     drawPieces(screen, gameState.board)  # dibuja las piezas en los cuadrados
+
+    # Funcion para mostrar los movimientos validos de una pieza
+    if len(playerClicks) == 1:
+        rowSel, colSel = playerClicks[0]
+
+        for move in validMoves:
+            if move.startCol == colSel and move.startRow == rowSel:
+                p.draw.rect(screen, 'green',
+                            p.Rect(move.endCol * sq_size + sq_size/2 -5,
+                                   move.endRow * sq_size + sq_size/2 -5,
+                                   10,
+                                   10))
 
 
 def drawBoard(screen, colors):
@@ -230,6 +239,7 @@ def undoMoveBtn(screen):
     p.draw.rect(screen, p.Color("white"), p.Rect((sq_size * 8) + 20, 60, 160, sq_size // 2))
     text = p.font.SysFont('Corbel', 24).render('Undo', True, "black")
     screen.blit(text, ((sq_size * 8) + 25, 65))
+
 
 def setColorBoard(screen):
     p.draw.rect(screen, p.Color("white"), p.Rect((sq_size * 8) + 20, 100, 160, sq_size // 2))
