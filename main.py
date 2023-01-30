@@ -5,6 +5,7 @@ Este es el archivo principal, es el encargado de manejar los input del usuario y
 import pygame as p
 import ChessEngine
 from suplement import *
+import time
 
 p.init()
 width = 800  # 712
@@ -86,6 +87,7 @@ def main():
 
         for e in p.event.get():
 
+
             if e.type == p.QUIT:
                 running = False
 
@@ -140,19 +142,21 @@ def main():
                 if len(playerClicks) == 2:  # es decir el usuario clickeo 2 veces
                     move = ChessEngine.Move(playerClicks[0], playerClicks[1], gameState.board)
 
-                    if move in validMoves:
-                        gameState.makeMove(move)
+                    for i in range(len(validMoves)):
+                        if move == validMoves[i]:
+                            gameState.makeMove(validMoves[i])
+                            sqSelected = ()
+                            playerClicks = []
+                            moveMade = True
 
-                        # Show last valid move made functionality
-                        p.draw.rect(screen, p.Color("white"), [sq_size * 8 + 20, 550, 165, sq_size // 2])
-                        text = p.font.SysFont('Corbel', 24).render('Last Move: ' + str(move.getChessNotation()), True,
-                                                                   "black")
-                        screen.blit(text, ((sq_size * 8) + 25, 555))
+                            # Show last valid move made functionality
+                            p.draw.rect(screen, p.Color("gray60"), [sq_size * 8 + 20, 550, 165, sq_size // 2])
+                            text = p.font.SysFont('Corbel', 24).render('Last Move: ' + str(move.getChessNotation()), True, "black")
+                            screen.blit(text, ((sq_size * 8) + 25, 555))
 
-                        moveMade = True
-
-                    else:
+                    if not moveMade:
                         print('invalid move')
+                        playerClicks = [sqSelected]
 
                     print('move made: ' + move.getChessNotation())
 
@@ -169,6 +173,17 @@ def main():
                 if e.key == p.K_u:  # cuando apreto u se elimina el ultimo movimiento
                     gameState.undoMove()
                     moveMade = True
+
+
+        # Show who to move functionality (have to implement)
+        if (gameState.whiteToMove):
+            turn = 'white'
+        else:
+            turn = 'black'
+        p.draw.rect(screen, p.Color("gray60"), [sq_size * 8 + 20, 510, 165, sq_size // 2])
+        text = p.font.SysFont('Corbel', 24).render('To Move: ' + turn, True, "black")
+        screen.blit(text, ((sq_size * 8) + 25, 515))
+
 
         if moveMade:
             validMoves = gameState.getValidMoves()

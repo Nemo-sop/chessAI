@@ -3,7 +3,7 @@ Esta clase es responsable de almacenar toda la informacion del estado de un jueg
 Tambien determina los movimientos validos en cada estado.
 Guarda un historial de movimientos
 """
-
+import time
 
 class GameState():
     def __init__(self):
@@ -35,6 +35,7 @@ class GameState():
         self.blackKingLocation = (0, 4)
         self.checkMate = False
         self.staleMate = False
+        self.enpassantPossible = () # coordinates for the sq where the capture is possible
 
     '''
     Toma un movimiento como parametro y lo ejecuta, no sirve para algunos movimientos
@@ -51,6 +52,16 @@ class GameState():
             self.whiteKingLocation = (move.endRow, move.endCol)
         if move.pieceMoved == 'bK':
             self.blackKingLocation = (move.endRow, move.endCol)
+        # pawn promotion
+        if move.isPawnPromotion:
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + 'Q'
+        # enpassant move
+        if move.isEnpassantMove:
+            self.board[move.startRow][move.endCol] = '--'
+        if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2:
+            self.enpassantPossible = ((move.startRow + move.endRow)//2, move.startCol)
+        else:
+            self.enpassantPossible = ()
 
     def undoMove(self):
         if len(self.moveLog) != 0:
@@ -65,6 +76,13 @@ class GameState():
                 self.blackKingLocation = (move.startRow, move.startCol)
             self.checkMate = False
             self.staleMate = False
+            # undo enpassant move
+            if move.isEnpassantMove:
+                self.board[move.endRow][move.endCol] = '--'
+                self.board[move.startRow][move.endCol] = move.pieceCapture
+                self.enpassantPossible = (move.endRow, move.endCol)
+            if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2:
+                self.enpassantPossible = ()
 
         else:
             print('Error: No move in the move log!')
@@ -105,23 +123,28 @@ class GameState():
     # segun si terminan en un jaque para la persona que esta por mover
 
     def getValidMoves(self):
-
+        start = time.time()
+        tempEnpassantPossible = self.enpassantPossible
         # NAIVE ALGORITHM
         # 1 generate all possible moves
         moves = self.getAllPossibleMoves()
+        movesSimulation = len(moves)
         # 2 for each move, make the move
         for i in range(len(moves)-1, -1, -1): # when removing elements from a list, doit backwards
             self.makeMove(moves[i])
         # 3 generate all opponents moves
         # 4 for each of your opponents moves, see if they attack your king
             self.whiteToMove = not self.whiteToMove # because when a move is made, the turns switch
-            if self.inCheck():
+            inCheck, oppMovesSim = self.inCheck()
+            if inCheck:
                 moves.remove(moves[i])# 5 if they do attack your king, is not a valid move
             self.whiteToMove = not self.whiteToMove
             self.undoMove()
 
+            movesSimulation += oppMovesSim
+
         if len(moves) == 0:
-            if self.inCheck():
+            if inCheck:
                 self.checkMate = True
             else:
                 self.staleMate = True
@@ -130,11 +153,14 @@ class GameState():
         for i in moves:
             print(i.getChessNotation())
         if self.staleMate:
-            print('Stalemate')
+            print(bcolors.WARNING +'Stalemate'+ bcolors.ENDC)
         if self.checkMate:
-            print('Checkmate')
+            print(bcolors.WARNING +'Checkmate'+ bcolors.ENDC)
+        print('time to calculate valid moves: '+str(round(time.time()-start,3))+'s')
+        print('moves simulated: '+str(movesSimulation))
         print('-' * 20)
 
+        self.enpassantPossible = tempEnpassantPossible
         return moves
 
 
@@ -154,11 +180,12 @@ class GameState():
     def squareUnderAttack(self, row, col):
         self.whiteToMove = not self.whiteToMove # switch to opponents turn to move, to see their moves
         oppMoves = self.getAllPossibleMoves()
+        movesSimulation = len(oppMoves)
         self.whiteToMove = not self.whiteToMove # switch back
         for move in oppMoves:
             if move.endRow == row and move.endCol == col:
-                return True
-        return False
+                return True, movesSimulation
+        return False, movesSimulation
 
 
 
@@ -170,41 +197,57 @@ class GameState():
         limitColLeft = False
         limitColRight = False
         color = self.board[row][col][0]
+
         if color == 'w':
-            if self.board[row - 1][col] == '--':
-                moves.append(Move((row, col), (row - 1, col), self.board))
-                if row == 6 and self.board[row - 2][col] == '--':
-                    moves.append(Move((row, col), (row - 2, col), self.board))
+            if row-1 >= 0:
+                if self.board[row - 1][col] == '--':
+                    moves.append(Move((row, col), (row - 1, col), self.board))
+                    if row == 6 and self.board[row - 2][col] == '--':
+                        moves.append(Move((row, col), (row - 2, col), self.board))
 
-            if col == 7:
-                limitColRight = True
-            elif col == 0:
-                limitColLeft = True
+                if col == 7:
+                    limitColRight = True
+                elif col == 0:
+                    limitColLeft = True
 
-            if not limitColLeft and self.board[row - 1][col - 1][0] == 'b':
-                moves.append(Move((row, col), (row - 1, col - 1), self.board))
 
-            if not limitColRight and self.board[row - 1][col + 1][0] == 'b':
-                moves.append(Move((row, col), (row - 1, col + 1), self.board))
+                if not limitColLeft and self.board[row - 1][col - 1][0] == 'b':
+                    moves.append(Move((row, col), (row - 1, col - 1), self.board))
+
+                elif (row - 1, col - 1) == self.enpassantPossible:
+                    moves.append(Move((row, col), (row - 1, col - 1), self.board, isEnpassantMove=True))
+
+                if not limitColRight and self.board[row - 1][col + 1][0] == 'b':
+                    moves.append(Move((row, col), (row - 1, col + 1), self.board))
+
+                elif (row - 1, col + 1) == self.enpassantPossible:
+                    moves.append(Move((row, col), (row - 1, col + 1), self.board, isEnpassantMove=True))
 
 
 
         elif color == 'b':
-            if self.board[row + 1][col] == '--':
-                moves.append(Move((row, col), (row + 1, col), self.board))
-                if row == 1 and self.board[row + 2][col] == '--':
-                    moves.append(Move((row, col), (row + 2, col), self.board))
+            if row + 1 <= 7:
+                if self.board[row + 1][col] == '--':
+                    moves.append(Move((row, col), (row + 1, col), self.board))
+                    if row == 1 and self.board[row + 2][col] == '--':
+                        moves.append(Move((row, col), (row + 2, col), self.board))
 
-            if col == 7:
-                limitColRight = True
-            elif col == 0:
-                limitColLeft = True
+                if col == 7:
+                    limitColRight = True
+                elif col == 0:
+                    limitColLeft = True
 
-            if not limitColLeft and self.board[row + 1][col - 1][0] == 'w':
-                moves.append(Move((row, col), (row + 1, col - 1), self.board))
+                if not limitColLeft and self.board[row + 1][col - 1][0] == 'w':
+                    moves.append(Move((row, col), (row + 1, col - 1), self.board))
 
-            if not limitColRight and self.board[row + 1][col + 1][0] == 'w':
-                moves.append(Move((row, col), (row + 1, col + 1), self.board))
+                elif (row + 1, col - 1) == self.enpassantPossible:
+                    moves.append(Move((row, col), (row + 1, col - 1), self.board, isEnpassantMove=True))
+
+                if not limitColRight and self.board[row + 1][col + 1][0] == 'w':
+                    moves.append(Move((row, col), (row + 1, col + 1), self.board))
+
+                elif (row + 1, col + 1) == self.enpassantPossible:
+                    moves.append(Move((row, col), (row + 1, col + 1), self.board, isEnpassantMove=True))
 
     def getRookMoves(self, col, row, moves):
         color = self.board[row][col][0]
@@ -369,14 +412,23 @@ class GameState():
         self.getBishopMoves(col, row, moves)
 
 
-class Move():
-    def __init__(self, startSq, endSq, board):
+class Move:
+    def __init__(self, startSq, endSq, board, isEnpassantMove=False):
         self.startRow = startSq[0]
         self.startCol = startSq[1]
         self.endRow = endSq[0]
         self.endCol = endSq[1]
         self.pieceMoved = board[self.startRow][self.startCol]
         self.pieceCapture = board[self.endRow][self.endCol]
+
+        self.isPawnPromotion = (self.pieceMoved == 'wP' and self.endRow == 0) or (self.pieceMoved == 'bP' and self.endRow == 7)
+
+        self.isEnpassantMove = isEnpassantMove
+
+        if self.isEnpassantMove:
+            self.pieceCapture = 'wP' if self.pieceMoved == 'bP' else 'bP'
+
+
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
 
     ranksToRows = {"1": 7, "2": 6, "3": 5, "4": 4, "5": 3, "6": 2, "7": 1, "8": 0}
@@ -401,3 +453,13 @@ class Move():
 
     def toString(self):
         return
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
