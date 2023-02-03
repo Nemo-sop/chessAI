@@ -89,23 +89,24 @@ def main():
 
     while running:
 
+        # Bot plays
+        if playerIsWhite != gameState.whiteToMove:
+            move = playBot(gameState, 'bone', 5, True)
+            if move is not None:
+                gameState.makeMove(move)
+                moveMade = True
+            else:
+                if gameState.staleMate:
+                    pass
+                elif gameState.checkMate:
+                    pass
 
         for e in p.event.get():
 
             if e.type == p.QUIT:
                 running = False
 
-            # Bot plays
-            if playerIsWhite != gameState.whiteToMove:
-                move = playBot(gameState, 'bone', 10, True)
-                if move is not None:
-                    gameState.makeMove(move)
-                    moveMade = True
-                else:
-                    if gameState.staleMate:
-                        pass
-                    elif gameState.checkMate:
-                        pass
+
 
             elif e.type == p.MOUSEBUTTONDOWN:  # [UPGRADE] hay q hacerlo click and drag para q sea mas lindo
                 location = p.mouse.get_pos()  # esta es la ubicacion (x,y) del mouse
@@ -125,6 +126,7 @@ def main():
                     text = p.font.SysFont('Corbel', 24).render('New Game', True, "black")
                     screen.blit(text, ((sq_size * 8) + 25, 25))
                     gameState = ChessEngine.GameState()
+                    playerIsWhite = True
                     moveMade = True
                 else:
                     restetNewGameBtn(screen)
@@ -161,6 +163,7 @@ def main():
                     text = 'Player Color: B'
                     if playerIsWhite:
                         text = 'Player Color: W'
+                    moveMade = True # Esto es para q cambie de jugador con respecto a los movimientos validos
                     text = p.font.SysFont('Corbel', 24).render(text, True, "black")
                     screen.blit(text, ((sq_size * 8) + 25, 145))
                 else:

@@ -29,7 +29,6 @@ class GameState():
             'Q': self.getQueenMoves,
             'K': self.getKingMoves,
         }
-        self.playerWhite = True
         self.whiteToMove = True
         self.moveLog = []
         self.whiteKingLocation = (7, 4)
