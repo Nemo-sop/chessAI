@@ -17,7 +17,7 @@ def chooseMove(board, depth, maximizingPlayer):
     print('Best Move: ', chessNotation)
     print('Best Value: ', bestValue)
     print('Moves taken into account: ', len(log))
-    print('Decision timr: ' + str(round(time.time()-start,2)) + 's')
+    print('Decision time: ' + str(round(time.time()-start,2)) + 's')
     print('=' * 20)
     return bestMove
 

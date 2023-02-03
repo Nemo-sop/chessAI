@@ -8,6 +8,7 @@ from suplement import *
 import time
 import BrainV0 as bcero
 import BrainV1 as bone
+import BrainV2 as btwo
 
 p.init()
 width = 800  # 712
@@ -91,7 +92,7 @@ def main():
 
         # Bot plays
         if playerIsWhite != gameState.whiteToMove:
-            move = playBot(gameState, 'bone', 4, True)
+            move = playBot(gameState, 'btwo', 4, True, playerIsWhite)
             if move is not None:
                 gameState.makeMove(move)
                 moveMade = True
@@ -301,10 +302,12 @@ def selectColorPlayer(screen, playerIsWhite):
     screen.blit(text, ((sq_size * 8) + 25, 145))
 
 
-def playBot(gameState, brain, depth, maximizingPlayer):
+def playBot(gameState, brain, depth, maximizingPlayer, playerIsWhite):
     if brain == 'bcero':
         return bcero.chooseMove(gameState)
     elif brain == 'bone':
         return bone.chooseMove(gameState, depth, maximizingPlayer)
+    elif brain == 'btwo':
+        return btwo.chooseMove(gameState, depth, maximizingPlayer, playerIsWhite)
 
 main()
