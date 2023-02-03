@@ -7,6 +7,7 @@ import ChessEngine
 from suplement import *
 import time
 import BrainV0 as bcero
+import BrainV1 as bone
 
 p.init()
 width = 800  # 712
@@ -94,8 +95,9 @@ def main():
             if e.type == p.QUIT:
                 running = False
 
+            # Bot plays
             if playerIsWhite != gameState.whiteToMove:
-                move = playBot(gameState)
+                move = playBot(gameState, 'bone', 10, True)
                 if move is not None:
                     gameState.makeMove(move)
                     moveMade = True
@@ -296,8 +298,10 @@ def selectColorPlayer(screen, playerIsWhite):
     screen.blit(text, ((sq_size * 8) + 25, 145))
 
 
-def playBot(gameState):
-    return bcero.chooseMove(gameState)
-
+def playBot(gameState, brain, depth, maximizingPlayer):
+    if brain == 'bcero':
+        return bcero.chooseMove(gameState)
+    elif brain == 'bone':
+        return bone.chooseMove(gameState, depth, maximizingPlayer)
 
 main()
