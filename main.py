@@ -6,6 +6,7 @@ import pygame as p
 import ChessEngine
 from suplement import *
 import time
+import BrainV0 as bcero
 
 p.init()
 width = 800  # 712
@@ -74,22 +75,35 @@ def main():
     loadImages()  # esto se hace una sola vez antes del ciclo ya que es muy costoso
     running = True
     p.draw.rect(screen, p.Color("azure3"), p.Rect(sq_size * 8, 0, 200, sq_size * 8))
+    playerIsWhite = True
 
     # Boton start
     restetNewGameBtn(screen)
     undoMoveBtn(screen)
     setColorBoard(screen)
+    selectColorPlayer(screen, playerIsWhite)
 
     sqSelected = ()  # no se inicia con ningun cuadrado seleccionado, recuerda el ultimo click del usuario (row, col)
     playerClicks = []  # recuerda los clicks del usuario ( dos tuplas [(6,4), (4,4)] )
 
     while running:
 
-        for e in p.event.get():
 
+        for e in p.event.get():
 
             if e.type == p.QUIT:
                 running = False
+
+            if playerIsWhite != gameState.whiteToMove:
+                move = playBot(gameState)
+                if move is not None:
+                    gameState.makeMove(move)
+                    moveMade = True
+                else:
+                    if gameState.staleMate:
+                        pass
+                    elif gameState.checkMate:
+                        pass
 
             elif e.type == p.MOUSEBUTTONDOWN:  # [UPGRADE] hay q hacerlo click and drag para q sea mas lindo
                 location = p.mouse.get_pos()  # esta es la ubicacion (x,y) del mouse
@@ -119,6 +133,7 @@ def main():
                     text = p.font.SysFont('Corbel', 24).render('Undo', True, "black")
                     screen.blit(text, ((sq_size * 8) + 25, 65))
                     gameState.undoMove()
+                    gameState.undoMove() #pq sino le saca el movimiento al bot y automaticamente lo vuelve a hacer
                     moveMade = True
                 else:
                     undoMoveBtn(screen)
@@ -136,7 +151,18 @@ def main():
                 else:
                     setColorBoard(screen)
 
-
+                # Funcionalidad para elegir el color de jugar
+                if (sq_size * 8) + 20 <= mouse[0] <= (sq_size * 8) + 180 and 140 <= mouse[1] <= (sq_size // 2) + 140:
+                    p.draw.rect(screen, p.Color("gray"), [sq_size * 8 + 20, 140, 160, sq_size // 2])
+                    playerIsWhite = not playerIsWhite
+                    gameState = ChessEngine.GameState()
+                    text = 'Player Color: B'
+                    if playerIsWhite:
+                        text = 'Player Color: W'
+                    text = p.font.SysFont('Corbel', 24).render(text, True, "black")
+                    screen.blit(text, ((sq_size * 8) + 25, 145))
+                else:
+                    selectColorPlayer(screen, playerIsWhite)
 
                 # Funcion para ejecutar un movimiento
                 if len(playerClicks) == 2:  # es decir el usuario clickeo 2 veces
@@ -151,7 +177,8 @@ def main():
 
                             # Show last valid move made functionality
                             p.draw.rect(screen, p.Color("gray60"), [sq_size * 8 + 20, 550, 165, sq_size // 2])
-                            text = p.font.SysFont('Corbel', 24).render('Last Move: ' + str(move.getChessNotation()), True, "black")
+                            text = p.font.SysFont('Corbel', 24).render('Last Move: ' + str(move.getChessNotation()),
+                                                                       True, "black")
                             screen.blit(text, ((sq_size * 8) + 25, 555))
 
                     if not moveMade:
@@ -174,7 +201,6 @@ def main():
                     gameState.undoMove()
                     moveMade = True
 
-
         # Show who to move functionality (have to implement)
         if (gameState.whiteToMove):
             turn = 'white'
@@ -183,7 +209,6 @@ def main():
         p.draw.rect(screen, p.Color("gray60"), [sq_size * 8 + 20, 510, 165, sq_size // 2])
         text = p.font.SysFont('Corbel', 24).render('To Move: ' + turn, True, "black")
         screen.blit(text, ((sq_size * 8) + 25, 515))
-
 
         if moveMade:
             validMoves = gameState.getValidMoves()
@@ -212,8 +237,8 @@ def drawGameState(screen, gameState, color, playerClicks, validMoves):
         for move in validMoves:
             if move.startCol == colSel and move.startRow == rowSel:
                 p.draw.rect(screen, 'green',
-                            p.Rect(move.endCol * sq_size + sq_size/2 -5,
-                                   move.endRow * sq_size + sq_size/2 -5,
+                            p.Rect(move.endCol * sq_size + sq_size / 2 - 5,
+                                   move.endRow * sq_size + sq_size / 2 - 5,
                                    10,
                                    10))
 
@@ -260,6 +285,19 @@ def setColorBoard(screen):
     p.draw.rect(screen, p.Color("white"), p.Rect((sq_size * 8) + 20, 100, 160, sq_size // 2))
     text = p.font.SysFont('Corbel', 24).render('Color', True, "black")
     screen.blit(text, ((sq_size * 8) + 25, 105))
+
+
+def selectColorPlayer(screen, playerIsWhite):
+    p.draw.rect(screen, p.Color("white"), p.Rect((sq_size * 8) + 20, 140, 160, sq_size // 2))
+    text = 'Player Color: B'
+    if playerIsWhite:
+        text = 'Player Color: W'
+    text = p.font.SysFont('Corbel', 24).render(text, True, "black")
+    screen.blit(text, ((sq_size * 8) + 25, 145))
+
+
+def playBot(gameState):
+    return bcero.chooseMove(gameState)
 
 
 main()
