@@ -149,16 +149,16 @@ class GameState():
             else:
                 self.staleMate = True
 
-        print('-' * 20)
-        for i in moves:
-            print(i.getChessNotation())
-        if self.staleMate:
-            print(bcolors.WARNING +'Stalemate'+ bcolors.ENDC)
-        if self.checkMate:
-            print(bcolors.WARNING +'Checkmate'+ bcolors.ENDC)
-        print('time to calculate valid moves: '+str(round(time.time()-start,3))+'s')
-        print('moves simulated: '+str(movesSimulation))
-        print('-' * 20)
+        # print('-' * 20)
+        # # for i in moves:
+        # #     print(i.getChessNotation())
+        # if self.staleMate:
+        #     print(bcolors.WARNING +'Stalemate'+ bcolors.ENDC)
+        # if self.checkMate:
+        #     print(bcolors.WARNING +'Checkmate'+ bcolors.ENDC)
+        # print('time to calculate valid moves: '+str(round(time.time()-start,3))+'s')
+        # print('moves simulated: '+str(movesSimulation))
+        # print('-' * 20)
 
         self.enpassantPossible = tempEnpassantPossible
         return moves

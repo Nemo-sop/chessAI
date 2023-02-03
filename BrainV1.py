@@ -1,18 +1,26 @@
 import sys
 import copy
+import time
 
 
 def chooseMove(board, depth, maximizingPlayer):
     alpha = float('-inf')
     beta = float('inf')
-    bestValue, bestMove = minimaxAB(board, depth, alpha, beta, maximizingPlayer)
+    log = []
+    start = time.time()
+    bestValue, bestMove = minimaxAB(board, depth, alpha, beta, maximizingPlayer, log)
+    log.sort(key=lambda tup: tup[1], reverse=True)
+    print('='*20)
     print('Best Move: ', bestMove.getChessNotation())
     print('Best Value: ', bestValue)
+    print('Moves taken into account: ', len(log))
+    print('Decision timr: ' + str(round(time.time()-start,2)) + 's')
+    print('=' * 20)
     return bestMove
 
 
 # MinMax with alpha beta pruning
-def minimaxAB(gameState, depth, alpha, beta, maximizingPlayer):
+def minimaxAB(gameState, depth, alpha, beta, maximizingPlayer, log):
     if depth == 0 or gameState.staleMate or gameState.checkMate:
         return evaluate(gameState), None
 
@@ -22,26 +30,28 @@ def minimaxAB(gameState, depth, alpha, beta, maximizingPlayer):
         for move in gameState.getValidMoves():
             newBoard = copy.deepcopy(gameState)
             newBoard.makeMove(move)
-            value, _ = minimaxAB(newBoard, depth - 1, alpha, beta, not maximizingPlayer)
+            value, _ = minimaxAB(newBoard, depth - 1, alpha, beta, not maximizingPlayer, log)
             if value > bestValue:
                 bestValue = value
                 bestMove = move
             alpha = max(alpha, bestValue)
             if alpha >= beta:
                 break
+        log.append((bestMove, bestValue))
         return bestValue, bestMove
     else:
         bestValue = sys.maxsize
         for move in gameState.getValidMoves():
             newBoard = copy.deepcopy(gameState)
             newBoard.makeMove(move)
-            value, _ = minimaxAB(newBoard, depth - 1, alpha, beta, not maximizingPlayer)
+            value, _ = minimaxAB(newBoard, depth - 1, alpha, beta, not maximizingPlayer, log)
             if value < bestValue:
                 bestValue = value
                 bestMove = move
             beta = min(beta, bestValue)
             if alpha >= beta:
                 break
+        log.append((bestMove, bestValue))
         return bestValue, bestMove
 
 
