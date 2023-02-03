@@ -10,8 +10,11 @@ def chooseMove(board, depth, maximizingPlayer):
     start = time.time()
     bestValue, bestMove = minimaxAB(board, depth, alpha, beta, maximizingPlayer, log)
     log.sort(key=lambda tup: tup[1], reverse=True)
+    chessNotation = 'Finished'
+    if bestMove is not None:
+        chessNotation = bestMove.getChessNotation()
     print('='*20)
-    print('Best Move: ', bestMove.getChessNotation())
+    print('Best Move: ', chessNotation)
     print('Best Value: ', bestValue)
     print('Moves taken into account: ', len(log))
     print('Decision timr: ' + str(round(time.time()-start,2)) + 's')

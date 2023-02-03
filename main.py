@@ -91,7 +91,7 @@ def main():
 
         # Bot plays
         if playerIsWhite != gameState.whiteToMove:
-            move = playBot(gameState, 'bone', 5, True)
+            move = playBot(gameState, 'bone', 4, True)
             if move is not None:
                 gameState.makeMove(move)
                 moveMade = True
